@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Інтерактивна вебсистема діагностики несправностей персонального комп'ютера" />
+  <title>PC Diagnostic Hub — діагностика несправностей ПК</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f8a5b'/%3E%3Cpath d='M5 16h5l3-7 5 14 3-7h6' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <!-- ===== Шапка ===== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+        </span>
+        <div class="brand-text">
+          <p class="brand-name">PC Diagnostic Hub</p>
+          <p class="brand-sub">Діагностика та рішення</p>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Основна навігація">
+        <button class="nav-tab is-active" data-view="catalog" type="button"><span class="i" data-icon="grid" data-size="16"></span>Каталог несправностей</button>
+        <button class="nav-tab" data-view="wizard" type="button"><span class="i" data-icon="nodes" data-size="16"></span>Інтерактивний помічник</button>
+        <button class="nav-tab" data-view="admin" type="button"><span class="i" data-icon="shield" data-size="16"></span>Панель адміністратора</button>
+      </nav>
+
+      <div class="role-switch" role="group" aria-label="Роль користувача">
+        <button id="roleGuestBtn" class="role-opt is-active" type="button" aria-pressed="true">Гість</button>
+        <button id="roleAdminBtn" class="role-opt" type="button" aria-pressed="false" aria-label="Адміністратор" title="Адміністратор"><span class="i" data-icon="user-shield" data-size="18"></span><span class="role-label">Адміністратор</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ===== Каталог ===== -->
+    <section id="view-catalog" class="view is-visible" aria-labelledby="catalog-title">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">База знань / Каталог</p>
+          <h2 id="catalog-title">Знайдіть причину. Відновіть роботу.</h2>
+          <p class="lede">Типові несправності ПК, зрозумілі пояснення та безпечні кроки вирішення.</p>
+        </div>
+        <dl class="head-stats">
+          <div><dt>несправностей</dt><dd id="statFaults">00</dd></div>
+          <div><dt>категорій</dt><dd id="statCats">00</dd></div>
+        </dl>
+      </header>
+
+      <aside class="cta" aria-label="Запуск помічника">
+        <span class="cta-icon" aria-hidden="true"><span class="i" data-icon="nodes" data-size="22"></span></span>
+        <div class="cta-text">
+          <h3>Не знаєте, з чого почати?</h3>
+          <p>Опишіть симптоми — інтерактивний помічник проведе вас до можливого рішення.</p>
+        </div>
+        <button class="btn btn-primary" type="button" data-goto="wizard">
+          <span class="i" data-icon="arrow-right" data-size="16"></span>Почати діагностику
+        </button>
+      </aside>
+
+      <div class="toolbar">
+        <label class="search-field">
+          <span class="sr-only">Пошук за симптомами та кодами помилок</span>
+          <span class="i search-ico" data-icon="search" data-size="18"></span>
+          <input id="searchInput" type="search" placeholder="Пошук за симптомами, кодами помилок…" autocomplete="off" />
+          <kbd class="kbd" aria-hidden="true">Ctrl K</kbd>
+        </label>
+        <label class="select-field">
+          <span class="sr-only">Сортування</span>
+          <select id="sortSelect">
+            <option value="severity-desc">За критичністю ↓</option>
+            <option value="severity-asc">За критичністю ↑</option>
+            <option value="category">За категорією</option>
+            <option value="name-asc">За назвою А–Я</option>
+            <option value="name-desc">За назвою Я–А</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="categoryPills" class="pills" role="group" aria-label="Фільтр за категорією"></div>
+
+      <div class="list-title">
+        <h3><span id="catalogTitle">Усі несправності</span> <small id="catalogCount" class="count-chip">0 записів</small></h3>
+        <p class="muted small">Критичність визначає пріоритет перевірки, а не точний діагноз</p>
+      </div>
+
+      <div id="catalogGrid" class="card-grid"></div>
+      <p id="catalogEmpty" class="empty-state hidden">Нічого не знайдено. Змініть фільтри або пошуковий запит.</p>
+
+      <p class="safety-line">
+        <span class="i" data-icon="shield" data-size="16"></span>
+        Перед апаратними перевірками вимкніть ПК та від’єднайте живлення. Не розбирайте блок живлення.
+      </p>
+    </section>
+
+    <!-- ===== Майстер ===== -->
+    <section id="view-wizard" class="view" hidden aria-labelledby="wizardTitle">
+      <header class="page-head">
+        <div>
+          <p id="wizardEyebrow" class="eyebrow">Діагностика / Покроковий помічник</p>
+          <h2 id="wizardTitle">Розберімося крок за кроком</h2>
+          <p id="wizardLede" class="lede">Відповідайте на короткі запитання про те, як поводиться ваш ПК.</p>
+        </div>
+        <p id="wizardTime" class="time-chip"><span class="i" data-icon="clock" data-size="16"></span>Близько 2 хвилин</p>
+      </header>
+
+      <ol id="wizardStepper" class="stepper" aria-label="Прогрес майстра"></ol>
+
+      <div class="wizard-layout">
+        <div id="wizardMain" class="wizard-main"></div>
+        <aside id="wizardAside" class="wizard-aside" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <!-- ===== Адмін ===== -->
+    <section id="view-admin" class="view" hidden aria-labelledby="admin-title">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Керування / Захищений розділ</p>
+          <h2 id="admin-title">Панель адміністратора</h2>
+          <p class="lede">Керуйте навчальною базою несправностей та інструкціями з їх усунення.</p>
+        </div>
+        <button id="adminLogoutBtn" class="btn btn-light hidden" type="button">
+          <span class="i" data-icon="logout" data-size="18"></span>Вийти з облікового запису
+        </button>
+      </header>
+
+      <!-- Гість -->
+      <div id="adminLocked" class="lock-panel">
+        <span class="lock-icon" aria-hidden="true"><span class="i" data-icon="lock" data-size="24"></span></span>
+        <h3>Доступ обмежено</h3>
+        <p class="muted">Розділ доступний лише ролі «Адміністратор». Увійдіть, щоб додавати, редагувати або видаляти записи.</p>
+        <button id="adminLoginBtn" class="btn btn-primary" type="button">Увійти</button>
+      </div>
+
+      <!-- Адміністратор -->
+      <div id="adminContent" class="hidden">
+        <div class="access-banner" role="status">
+          <span class="i" data-icon="shield-check" data-size="22"></span>
+          <div>
+            <strong>Доступ підтверджено · Адміністратор</strong>
+            <p>Додавання, редагування й видалення доступні лише після входу. Зміна ролі не надає прав доступу.</p>
+          </div>
+          <span class="access-tag">Демонстраційний обліковий запис</span>
+        </div>
+
+        <div class="admin-layout">
+          <div class="admin-col">
+            <section id="formPanel" class="panel admin-form-panel" aria-labelledby="formTitle">
+              <div class="panel-head">
+                <h3 id="formTitle">Додати несправність</h3>
+                <span id="formModeChip" class="mode-chip">Чернетка</span>
+              </div>
+              <form id="faultForm" class="panel-body" novalidate>
+                <div class="form-stack">
+                  <label class="field">
+                    <span>Категорія <b class="req" aria-hidden="true">*</b></span>
+                    <select id="formCategory" required></select>
+                  </label>
+                  <label class="field">
+                    <span>Симптом <b class="req" aria-hidden="true">*</b></span>
+                    <input id="formSymptom" type="text" maxlength="140" required autocomplete="off" placeholder="Короткий опис прояву несправності" />
+                  </label>
+                  <label class="field">
+                    <span>Можлива причина <b class="req" aria-hidden="true">*</b></span>
+                    <textarea id="formCause" rows="3" required placeholder="Технічна причина відмови"></textarea>
+                  </label>
+                  <label class="field">
+                    <span>Кроки вирішення <b class="req" aria-hidden="true">*</b></span>
+                    <textarea id="formSteps" rows="6" required placeholder="1. Вимкніть ПК та від’єднайте живлення&#10;2. Перевірте кабелі"></textarea>
+                    <small class="field-hint">Кожен крок — з нового рядка. Не додавайте небезпечних інструкцій.</small>
+                  </label>
+                  <label class="field">
+                    <span>Критичність <b class="req" aria-hidden="true">*</b></span>
+                    <select id="formSeverity" required>
+                      <option value="low">Низький</option>
+                      <option value="medium" selected>Середній</option>
+                      <option value="high">Високий</option>
+                    </select>
+                  </label>
+                </div>
+
+                <p id="formError" class="form-error" role="alert"></p>
+
+                <button id="formSubmitBtn" class="btn btn-primary btn-block" type="submit">Додати запис</button>
+                <div class="form-foot">
+                  <span>* Обов’язкові поля</span>
+                  <button id="formClearBtn" class="link-btn" type="button">Очистити</button>
+                </div>
+              </form>
+            </section>
+
+            <p class="side-note">
+              <span class="i" data-icon="shield" data-size="16"></span>
+              Перевіряйте безпеку порад перед додаванням. Записи не замінюють професійну діагностику.
+            </p>
+          </div>
+
+          <div class="admin-col">
+            <section class="panel" aria-labelledby="listTitle">
+              <div class="panel-head list-head">
+                <div>
+                  <h3 id="listTitle">Наявні записи</h3>
+                  <p id="adminCount" class="count-line">0 записів у навчальній базі</p>
+                </div>
+                <label class="mini-search">
+                  <span class="sr-only">Пошук запису за назвою</span>
+                  <span class="i" data-icon="search" data-size="16"></span>
+                  <input id="adminSearch" type="search" placeholder="Знайти запис за назвою…" autocomplete="off" />
+                </label>
+              </div>
+
+              <div id="adminTableWrap" class="table-wrap">
+                <table class="data-table">
+                  <caption class="sr-only">Список записів про несправності</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Код</th>
+                      <th scope="col">Симптом / категорія</th>
+                      <th scope="col">Критичність</th>
+                      <th scope="col" class="col-actions">Дії</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminList"></tbody>
+                </table>
+              </div>
+
+              <p id="adminEmpty" class="empty-state hidden">Нічого не знайдено. Змініть пошуковий запит.</p>
+
+              <div class="table-foot">
+                <span id="adminRange">Показано 0–0 із 0</span>
+                <div class="pager">
+                  <button id="adminPrev" class="icon-btn" type="button">‹ Назад</button>
+                  <span id="adminPage">Сторінка 1 з 1</span>
+                  <button id="adminNext" class="icon-btn" type="button">Далі ›</button>
+                </div>
+              </div>
+            </section>
+
+            <p class="notice notice-warn" role="note">
+              <span class="i" data-icon="alert" data-size="18"></span>
+              <span>Видалення потребує підтвердження. Запис буде прибрано з каталогу та сценаріїв помічника.</span>
+            </p>
+
+            <div class="danger-zone">
+              <div>
+                <strong>Початкова база</strong>
+                <p>Повернути типовий набір записів. Користувацькі записи й зміни буде втрачено.</p>
+              </div>
+              <button id="resetDbBtn" class="btn btn-danger-outline" type="button">Відновити початкову базу</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Футер ===== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Курсовий проєкт · Навчальний концепт <span class="sep">/</span> Без автоматичного сканування ПК</p>
+      <p class="mono">База знань · версія 1.0</p>
+    </div>
+  </footer>
+
+  <!-- ===== Модальні вікна ===== -->
+  <dialog id="loginModal" class="modal">
+    <form id="loginForm" method="dialog">
+      <h3>Вхід адміністратора</h3>
+      <p class="muted small">Роль за замовчуванням — гість. Пароль потрібен лише для панелі керування.</p>
+      <label class="field">
+        <span>Логін</span>
+        <input id="loginName" type="text" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span>Пароль</span>
+        <input id="loginPass" type="password" autocomplete="current-password" required />
+      </label>
+      <p id="loginError" class="form-error" role="alert"></p>
+      <p class="demo-hint">Демонстраційний вхід: <code>admin</code> / <code>admin</code></p>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Увійти</button>
+        <button id="loginCancelBtn" class="btn btn-light" type="button">Скасувати</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detailModal" class="modal modal-wide" aria-label="Деталі несправності">
+    <article id="detailBody"></article>
+    <div class="form-actions">
+      <button id="detailCloseBtn" class="btn btn-light" type="button">Закрити</button>
+    </div>
+  </dialog>
+
+  <dialog id="confirmModal" class="modal modal-confirm" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <h3 id="confirmTitle">Підтвердьте дію</h3>
+      <p id="confirmText" class="muted"></p>
+      <div class="form-actions">
+        <button id="confirmOkBtn" class="btn btn-danger" type="submit" value="ok">Підтвердити</button>
+        <button class="btn btn-light" type="submit" value="cancel">Скасувати</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
